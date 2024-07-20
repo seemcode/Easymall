@@ -188,11 +188,16 @@ const uploadImages = asyncHandler(async (req, res) => {
     );
 
     if (findBlog) {
-      req.files.map(async (file) => {
-        await deleteImageFromLocal(file.filename, "images");
-        await deleteImageFromLocal(file.filename, "images/blogs");
+      const deleteImagePromises = req.files.map((file) => {
+        return Promise.all([
+          deleteImageFromLocal(file.filename, "images"),
+          deleteImageFromLocal(file.filename, "images/blogs"),
+        ]);
       });
-      res.json(findBlog);
+
+      Promise.all(deleteImagePromises).then(() => {
+        res.json(findBlog);
+      });
     }
   } catch (error) {
     console.log(error.message);
