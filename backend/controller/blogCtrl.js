@@ -163,9 +163,6 @@ const disliketheBlog = asyncHandler(async (req, res) => {
 });
 
 const uploadImages = asyncHandler(async (req, res) => {
-  console.log("working 2");
-  const { id } = req.params;
-  validateMongoDbId(id);
   try {
     const uploader = (path) => cloudinaryUploadImg(path, "images");
     const urls = [];
@@ -173,35 +170,15 @@ const uploadImages = asyncHandler(async (req, res) => {
     for (const file of files) {
       const { path } = file;
       const newpath = await uploader(path);
+      console.log(newpath);
       urls.push(newpath);
+      fs.unlinkSync(path);
     }
-    const findBlog = await Blog.findByIdAndUpdate(
-      id,
-      {
-        images: urls.map((file) => {
-          return file;
-        }),
-      },
-      {
-        new: true,
-      }
-    );
-
-    if (findBlog) {
-      const deleteImagePromises = req.files.map((file) => {
-        return Promise.all([
-          deleteImageFromLocal(file.filename, "images"),
-          deleteImageFromLocal(file.filename, "images/blogs"),
-        ]);
-      });
-
-      Promise.all(deleteImagePromises).then(() => {
-        res.json(findBlog);
-      });
-    }
+    const images = urls.map((file) => {
+      return file;
+    });
+    res.json(images);
   } catch (error) {
-    console.log(error.message);
-    return res.json(error);
     throw new Error(error);
   }
 });
